@@ -38,18 +38,26 @@ def get_record(card):
     return record
 
 
-def main(position, location):
+def main(position, location,maxSize):
     records = []
     url = get_url(position, location)
     filename = position + " " + location + " " + datetime.today().strftime('%Y-%m-%d')
-    while True:
+    size = 0
+    flag = True
+    while flag == True:
         sleep(1)
         response = requests.get(url)
         soup = BeautifulSoup(response.text, 'html.parser')
         cards = soup.find_all('div', 'jobsearch-SerpJobCard')
         for card in cards:
-            record = get_record(card)
-            records.append(record)
+            if maxSize > size:
+                record = get_record(card)
+                records.append(record)
+                size = size + 1
+                print(size,maxSize)
+            else:
+                flag = False
+                break
         try:
             url = 'http://de.indeed.com' + soup.find('a', {'aria-label': 'Weiter'}).get('href')
         except AttributeError:
@@ -69,5 +77,7 @@ if __name__ == '__main__':
                         help='Position for Job Search')
     parser.add_argument('--location', type=str, required=True,
                         help='Location for Job Search')
+    parser.add_argument('--maxSize', type=int, required=True,
+                        help='sets the maxSize of the csv file')
     args = parser.parse_args()
-    main(position=args.position, location=args.location)
+    main(position=args.position, location=args.location, maxSize=args.maxSize)
