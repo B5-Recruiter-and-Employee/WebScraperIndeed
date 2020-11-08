@@ -68,7 +68,7 @@ def main(position, location,maxSize):
         writer = csv.writer(f)
         writer.writerow(
             ['job_title', 'job_location', 'company_name', 'job_summary', 'post_date', 'extract_date', 'job_salary', 'posting_url',
-             'description_text'])
+             'description_text','keywords'])
         writer.writerows(records)
 
 
