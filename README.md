@@ -7,4 +7,4 @@ python ./main.py --position 'POSITION' --location 'LOCATION' --maxSize MAX_NUMBE
 
 this will save a csv file with the data
 
-This will only work with the German Indeed Website
+It will access data from the US Website of Indeed.(cause English Job Description are better for keyword processing)

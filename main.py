@@ -7,7 +7,8 @@ import argparse
 
 
 def get_url(position, location):
-    template = 'https://de.indeed.com/jobs?q={}&l={}'
+    #TODO: More than just the US Version of Indeed (e.g UK,Germany...)
+    template = 'http://www.indeed.com/jobs?q={}&l={}'
     url = template.format(position, location)
     return url
 
@@ -15,7 +16,7 @@ def get_url(position, location):
 def get_record(card):
     a_tag_from_card = card.h2.a
     job_title = a_tag_from_card.get('title')
-    job_url = "http://de.indeed.com" + a_tag_from_card.get('href')
+    job_url = 'http://www.indeed.com' + a_tag_from_card.get('href')
     job_location = card.find('div', 'recJobLoc').get('data-rc-loc')
     try:
         company_name = card.find('span', 'company').text.strip()
@@ -59,7 +60,7 @@ def main(position, location,maxSize):
                 flag = False
                 break
         try:
-            url = 'http://de.indeed.com' + soup.find('a', {'aria-label': 'Weiter'}).get('href')
+            url = 'http://www.indeed.com' + soup.find('a', {'aria-label': 'Next'}).get('href')
         except AttributeError:
             break
 
