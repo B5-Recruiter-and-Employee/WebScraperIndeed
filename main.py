@@ -4,7 +4,20 @@ from bs4 import BeautifulSoup
 from time import sleep
 import csv
 import argparse
+import nltk
+import RAKE
+import operator
 
+stop_dir = nltk.corpus.stopwords.words('english') + ['arggis', 'others', 'us', 'plus', 'like']
+rakeObj = RAKE.Rake(stop_dir)
+
+def Sort_Tuple(tup) :
+    tup.sort(key = lambda x: x[1])
+    return tup
+
+def Extract_Keywords(job_descrip): 
+    filtered_data = job_descrip.replace("\n", " ")
+    keywords = Sort_Tuple(rakeObj.run(filtered_data))[-10:]
 
 def get_url(position, location):
     #TODO: More than just the US Version of Indeed (e.g UK,Germany...)
@@ -33,9 +46,15 @@ def get_record(card):
     response_job_descr_website = requests.get(job_url)
 
     soup2 = BeautifulSoup(response_job_descr_website.text, 'html.parser')
-    description_text = soup2.find('div', 'jobsearch-jobDescriptionText').get_text()
+    description_text = soup2.find('div', 'jobsearch-jobDescriptionText').get_text().replace("\n", '. ')
+   # filtered_data  = description_text.replace("\n", '\n')
+    keys = Sort_Tuple(rakeObj.run(description_text))[-10:]
+    keywords = []
+    #extract keywords from list of tuples w/o scores
+    for a_tuple in keys:
+        keywords.append(a_tuple[0])
     record = (
-        job_title, job_location, company_name, job_summary, post_date, today, job_salary, job_url, description_text)
+        job_title, job_location, company_name, job_summary, post_date, today, job_salary, job_url, description_text, keywords)
     return record
 
 
