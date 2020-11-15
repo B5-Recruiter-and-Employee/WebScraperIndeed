@@ -10,9 +10,9 @@ import operator
 import logging
 from elasticsearch import Elasticsearch
 
-stop_dir = nltk.corpus.stopwords.words(
-    'english') + ['arggis', 'others', 'us', 'plus', 'like']
+stop_dir = nltk.corpus.stopwords.words('english') + ['arggis', 'others', 'us', 'plus', 'like']
 rakeObj = RAKE.Rake(stop_dir)
+
 # Connect to elastic search server.
 # Ping pings the server and returns true if gets connected.
 def connect_elasticsearch():
@@ -24,11 +24,11 @@ def connect_elasticsearch():
         print('Awww it could not connect!')
     return _es
 
-
 if __name__ == '__main__':
   logging.basicConfig(level=logging.ERROR)
 
-
+# Creates Index in elastic search.
+# Can be checked after running this programm in Kibana: Stack Management/Index Management
 def create_index(es_object, index_name):
     created = False
     # index settings
@@ -65,10 +65,10 @@ def create_index(es_object, index_name):
         }
     }
 
-
     try:
         if not es_object.indices.exists(index_name):
             # Ignore 400 means to ignore "Index Already Exist" error.
+            #Creates an index with particular name with a template above.
             es_object.indices.create(index=index_name, ignore=400, body=settings)
             print('Created Index')
         created = True
@@ -77,6 +77,7 @@ def create_index(es_object, index_name):
     finally:
         return created
 
+# Adds the record (job offer) to the ES index.
 def store_record(elastic_object, index_name, record):
     try:
         outcome = elastic_object.index(index=index_name, body=record)
@@ -88,9 +89,9 @@ def Sort_Tuple(tup) :
     tup.sort(key = lambda x: x[1])
     return tup
 
-def Extract_Keywords(job_descrip): 
-    filtered_data = job_descrip.replace("\n", " ")
-    keywords = Sort_Tuple(rakeObj.run(filtered_data))[-10:]
+# def Extract_Keywords(job_descrip): 
+#     filtered_data = job_descrip.replace("\n", " ")
+#     keywords = Sort_Tuple(rakeObj.run(filtered_data))[-10:]
 
 def get_url(position, location):
     # TODO: More than just the US Version of Indeed (e.g UK,Germany...)
@@ -100,6 +101,7 @@ def get_url(position, location):
 
 
 def get_record(card):
+    # start data was not scrapped that is why default start date is always today.
     start_date = datetime.today().strftime('%Y-%m-%d')
     a_tag_from_card = card.h2.a
     job_title = a_tag_from_card.get('title')
@@ -157,14 +159,17 @@ def main(position, location,maxSize):
             url = 'http://www.indeed.com' + soup.find('a', {'aria-label': 'Next'}).get('href')
         except AttributeError:
             break
+    # Connects to elastic search and send the data (job offer) one by one to the created index.
+    #After running this file with command for location, position, size, everything will be stored in your kibana.
+    #Look up the Index Management. There the index "job offer" is created. 
     es = connect_elasticsearch()
     if es is not None:
         if create_index(es, 'job_offers'):
-            print(records)
             for record in records:
                 out = store_record(es, 'job_offers', record)
             print('Data indexed successfully')
 
+    #Csv file generation is commented out for now.
     # with open('%s.csv' % filename, 'w', newline='', encoding='utf-8') as f:
     #     writer = csv.writer(f)
     #     writer.writerow(
