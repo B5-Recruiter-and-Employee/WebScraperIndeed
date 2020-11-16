@@ -38,7 +38,6 @@ def create_index(es_object, index_name):
             "number_of_shards": 1,
             "number_of_replicas": 0
         },
-        # job_title, job_location, company_name, job_salary, description_text, keywords)
         "mappings": {
             "properties": {
                 "job_title": {
@@ -138,12 +137,9 @@ def get_record(card):
     #extract keywords from list of tuples w/o scores
     for a_tuple in keys:
         keywords.append(a_tuple[0])
-    # record_for_ES = {
-    #     'job_title': job_title, 'job_location' : job_location, 'company_name': company_name, 'job_salary': job_salary, 'description_text': description_text, 'keywords': keywords
-    # }
+   
     record = (
         job_title, job_location, company_name, job_salary, description_text, keywords)
-    #return record_for_ES
     return record
 
 
@@ -172,10 +168,9 @@ def main(position, location, maxCards, firstEntry):
             url = 'http://www.indeed.com' + soup.find('a', {'aria-label': 'Next'}).get('href')
         except AttributeError:
             break
-    # Connects to elastic search and send the data (job offer) one by one to the created index.
+    #If connected to ES, it sends the data (job offer) one by one to the created index.
     #After running this file with command for location, position, size, everything will be stored in your kibana.
     #Look up the Index Management. There the index "job offer" is created. 
-    es = connect_elasticsearch()
     if es is not None:
         if create_index(es, 'job_offers'):
             for record in records:
@@ -203,6 +198,7 @@ if __name__ == '__main__':
     maxCards = [3, 3, 3 ]
     firstEntry = [True, False, False]
     
+    es = connect_elasticsearch()
     i = 0
     for entry in position:
         main(position=position[i], location=location[i], maxCards=maxCards[i], firstEntry=firstEntry[i])
