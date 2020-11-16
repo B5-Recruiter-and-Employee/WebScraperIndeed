@@ -9,6 +9,7 @@ import RAKE
 import operator
 import logging
 from elasticsearch import Elasticsearch
+import re #for the regex wildcards (word replacement)
 
 stop_dir = nltk.corpus.stopwords.words('english') + ['arggis', 'others', 'us', 'plus', 'like']
 rakeObj = RAKE.Rake(stop_dir)
@@ -94,26 +95,25 @@ def Sort_Tuple(tup) :
 #     keywords = Sort_Tuple(rakeObj.run(filtered_data))[-10:]
 
 def get_url(position, location):
-    # TODO: More than just the US Version of Indeed (e.g UK,Germany...)
+    #TODO: More than just the US Version of Indeed (e.g UK,Germany...)
+
+    #the template is the link of indeed, in which you fill out job title & location
+    #job title is the first {} & job location is the second {}
     template = 'http://www.indeed.com/jobs?q={}&l={}'
     url = template.format(position, location)
     return url
 
 
 def get_record(card):
-    # start data was not scrapped that is why default start date is always today.
     start_date = datetime.today().strftime('%Y-%m-%d')
-    a_tag_from_card = card.h2.a
-    job_title = a_tag_from_card.get('title')
-    job_url = 'http://www.indeed.com' + a_tag_from_card.get('href')
-    location = card.find('div', 'recJobLoc').get('data-rc-loc')
+    atag = card.h2.a
+    job_title = atag.get('title')
+    job_url = 'http://www.indeed.com' + atag.get('href')
+    job_location = card.find('div', 'recJobLoc').get('data-rc-loc')
     try:
         company_name = card.find('span', 'company').text.strip()
     except AttributeError:
         company_name = ''
-    job_summary = card.find('div', 'summary').text.strip()
-    post_date = card.find('span', 'date').text
-    today = datetime.today().strftime('%Y-%m-%d')
     try:
         salary = card.find('span', 'salaryText').text.strip()
     except AttributeError:
@@ -121,37 +121,58 @@ def get_record(card):
     sleep(1)
     response_job_descr_website = requests.get(job_url)
 
+    #accesses the reloaded page in which the description can be seen
     soup2 = BeautifulSoup(response_job_descr_website.text, 'html.parser')
-    description = soup2.find('div', 'jobsearch-jobDescriptionText').get_text().replace("\n", '. ')
-    keys = Sort_Tuple(rakeObj.run(description))[-10:]
+    description_text = soup2.find('div', 'jobsearch-jobDescriptionText').get_text().replace("\n", ' ')
+    description_text = re.sub(" \S+.com\S+", '', description_text)  #replaces every url that ends with .com (including backslashes with additional info, such as .com/info/details)
+    description_text = re.sub(" \S+.org\S+", '', description_text)  #replaces every url that ends with .org (same as above)
+    description_text = re.sub(" \S+@\S+", '', description_text)     #replaces every e-mail address
+    description_text = re.sub(" https\S+", '', description_text)    #replaces any url that starts with https and the whitespace beforehand
+    description_text = re.sub(" www.\S+", '', description_text)     #replaces any url that starts with www. and the whitespace beforehand
+    description_text = re.sub("[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]", '', description_text)   #replaces all dates y-m-d
+    description_text = re.sub("[0-9][0-9]/[0-9][0-9]/[0-9][0-9][0-9][0-9]", '', description_text)   #replaces all dates d/m/y
+    description_text = re.sub("[0-9][0-9][0-9][0-9]+", '', description_text)    #replaces all numbers with 4 or more digits (years etc.)
+
+    '''
+    TODO:
+        description_text is what needs to be cleaned. 
+        'description_text.replace("\n", '. ') is the only cleaning that's been done so far (see above).
+        we need to look at the results to decide what some of the common clutter looks like.
+        DONE so far - (months, dots, addresses?)
+    '''
+    keys = Sort_Tuple(rakeObj.run(description_text))[-10:]
     keywords = []
-    # extract keywords from list of tuples w/o scores
+    #extract keywords from list of tuples w/o scores
     for a_tuple in keys:
         keywords.append(a_tuple[0])
-    record_for_ES = {
-        'job_title': job_title, 'location' : location, 'company_name': company_name, 'salary':salary, 'description': description, 'start_date':start_date, 'keywords':keywords
-    }
+    #record_for_ES = {
+    #    'job_title': job_title, 'location' : location, 'company_name': company_name, 'salary':salary, 'description': description, 'start_date':start_date, 'keywords':keywords
+    #}
     #record = (job_title, location, company_name, salary, description, start_date, keywords)
-    return record_for_ES
+    record = (
+        job_title, job_location, company_name, job_salary, description_text, keywords)
+    #return record_for_ES
+    return record
 
 
-def main(position, location,maxSize):
+def main(position, location, maxCards, firstEntry):
     records = []
     url = get_url(position, location)
-    filename = position + " " + location + " " + datetime.today().strftime('%Y-%m-%d')
-    size = 0
+    #filename = position + " " + location + " " + datetime.today().strftime('%Y-%m-%d') #original filename
+    filename = 'collected_data'
+    current_card = 0
     flag = True
     while flag == True:
         sleep(1)
-        response = requests.get(url)
-        soup = BeautifulSoup(response.text, 'html.parser')
-        cards = soup.find_all('div', 'jobsearch-SerpJobCard')
+        response = requests.get(url) #will send a request to the site & the response will be sent back (200 if successful)
+        soup = BeautifulSoup(response.text, 'html.parser') #soup is used to navigate the html tree structure of the web page
+        cards = soup.find_all('div', 'jobsearch-SerpJobCard') #find all cards with a div with the class 'jobsearch-SerpJobCard'
         for card in cards:
-            if maxSize > size:
+            if maxCards > current_card:
                 record = get_record(card)
                 records.append(record)
-                size = size + 1
-                print(size,maxSize)
+                current_card = current_card + 1
+                print(current_card,maxCards)
             else:
                 flag = False
                 break
@@ -169,21 +190,34 @@ def main(position, location,maxSize):
                 out = store_record(es, 'job_offers', record)
             print('Data indexed successfully')
 
-    #Csv file generation is commented out for now.
-    # with open('%s.csv' % filename, 'w', newline='', encoding='utf-8') as f:
-    #     writer = csv.writer(f)
-    #     writer.writerow(
-    #         ['job_title', 'location', 'company_name',  'salary', 'description', 'start_date', 'keywords'])
-    #     writer.writerows(records)
+
+    with open('%s.csv' % filename, 'a', newline='', encoding='utf-8') as f:
+        writer = csv.writer(f)
+        if firstEntry == True:
+            writer.writerow(
+                ['job_title', 'job_location', 'company_name', 'job_salary','description_text','keywords'])
+        writer.writerows(records)
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='Crawling Indeed Job Data')
-    parser.add_argument('--position', type=str, required=True,
-                        help='Position for Job Search')
-    parser.add_argument('--location', type=str, required=True,
-                        help='Location for Job Search')
-    parser.add_argument('--maxSize', type=int, required=True,
-                        help='sets the maxSize of the csv file')
-    args = parser.parse_args()
-    main(position=args.position, location=args.location, maxSize=args.maxSize)
+    '''
+    TODO:
+        create a list with positions, corresponding locations, the max number of cards for each position
+        and whether it's the first entry (except the first time always False)
+    '''
+    position = ['web developer', 'chemist', 'data scientist']
+    location = ['new york', 'new york', 'san francisco']
+    maxCards = [3, 3, 3 ]
+    firstEntry = [True, False, False]
+    
+    i = 0
+    for entry in position:
+        main(position=position[i], location=location[i], maxCards=maxCards[i], firstEntry=firstEntry[i])
+        i += 1
+
+  
+
+
+
+
+    
