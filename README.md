@@ -1,4 +1,5 @@
 # Web Scraping with Python and Beautiful Soup
+# ElasticSearch & Python: creating index and indexing of data.
 </br></br>
 ## Step 1: Installation
 First of all you need to figure out which Python version you have installed on your device. On some machines Python 2.?.? is installed by default, which is not what we want here. The latest version of python that I am currently using is 3.7.3
@@ -7,6 +8,8 @@ First of all you need to figure out which Python version you have installed on y
 `pip install bs4` - You need pip installed for this
 ### Installing requests on MacOS
 `pip install requests`
+### Installing Elastic Search on Python
+`pip install elasticsearch`
 </br></br>
 ### Known Errors:
 I had an error saying that the libraries can't be imported. <b>Fix</b>:
@@ -54,3 +57,11 @@ The code for it can be found on `line 50`. </br></br>
 - any year in the format d/m/y
 - any number with 4 or more digits
 
+</br></br>
+## Creating index in Elastic search and adding webscrapped data to index</br>
+<u>To look up the generated index:</u>
+- Pre-requirement: run your Elastic search and Kibana before indexing;
+- go to Kibana (http://localhost:5601);
+- go to Stack Management -> Index Management (http://localhost:5601/app/management/data/index_management/indices);
+- click on the index "job_offers" and look up the info e.g. "mappings"
+- In Dev Tools type the following command, run it and prove, whether data is indexed: GET job_offers/_search {"query": {"match_all": {}}}
