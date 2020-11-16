@@ -25,8 +25,8 @@ def connect_elasticsearch():
         print('Awww it could not connect!')
     return _es
 
-if __name__ == '__main__':
-  logging.basicConfig(level=logging.ERROR)
+# if __name__ == '__main__':
+#   logging.basicConfig(level=logging.ERROR)
 
 # Creates Index in elastic search.
 # Can be checked after running this programm in Kibana: Stack Management/Index Management
@@ -38,30 +38,27 @@ def create_index(es_object, index_name):
             "number_of_shards": 1,
             "number_of_replicas": 0
         },
+        # job_title, job_location, company_name, job_salary, description_text, keywords)
         "mappings": {
             "properties": {
                 "job_title": {
                     "type": "text"
-                    },
-                "location": {
+                },
+                "job_location": {
                     "type": "keyword"
-                    },
+                },
                 "company_name": {
                     "type": "text"
-                    },
-                "salary": {
+                },
+                "job_salary": {
                     "type": "integer"
                 },
-                "description": {
+                "description_text": {
                     "type": "text"
-                    },
-                "start_date": {
-                    "type": "date",
-                    "format": "yyyy-mm-dd"
-                    },
-                "job_keywords": {
+                },
+                "keywords": {
                     "type": "text"
-                    }
+                }
             }
         }
     }
@@ -90,10 +87,6 @@ def Sort_Tuple(tup) :
     tup.sort(key = lambda x: x[1])
     return tup
 
-# def Extract_Keywords(job_descrip): 
-#     filtered_data = job_descrip.replace("\n", " ")
-#     keywords = Sort_Tuple(rakeObj.run(filtered_data))[-10:]
-
 def get_url(position, location):
     #TODO: More than just the US Version of Indeed (e.g UK,Germany...)
 
@@ -115,9 +108,9 @@ def get_record(card):
     except AttributeError:
         company_name = ''
     try:
-        salary = card.find('span', 'salaryText').text.strip()
+        job_salary = card.find('span', 'salaryText').text.strip()
     except AttributeError:
-        salary = ''
+        job_salary = ''
     sleep(1)
     response_job_descr_website = requests.get(job_url)
 
@@ -145,10 +138,9 @@ def get_record(card):
     #extract keywords from list of tuples w/o scores
     for a_tuple in keys:
         keywords.append(a_tuple[0])
-    #record_for_ES = {
-    #    'job_title': job_title, 'location' : location, 'company_name': company_name, 'salary':salary, 'description': description, 'start_date':start_date, 'keywords':keywords
-    #}
-    #record = (job_title, location, company_name, salary, description, start_date, keywords)
+    # record_for_ES = {
+    #     'job_title': job_title, 'job_location' : job_location, 'company_name': company_name, 'job_salary': job_salary, 'description_text': description_text, 'keywords': keywords
+    # }
     record = (
         job_title, job_location, company_name, job_salary, description_text, keywords)
     #return record_for_ES
@@ -187,7 +179,8 @@ def main(position, location, maxCards, firstEntry):
     if es is not None:
         if create_index(es, 'job_offers'):
             for record in records:
-                out = store_record(es, 'job_offers', record)
+                entry = { 'job_title': record[0], 'job_location' : record[1], 'company_name': record[2], 'job_salary': record[3], 'description_text': record[4], 'keywords': record[5]}
+                out = store_record(es, 'job_offers', entry)
             print('Data indexed successfully')
 
 
@@ -214,10 +207,3 @@ if __name__ == '__main__':
     for entry in position:
         main(position=position[i], location=location[i], maxCards=maxCards[i], firstEntry=firstEntry[i])
         i += 1
-
-  
-
-
-
-
-    
