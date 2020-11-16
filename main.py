@@ -7,6 +7,7 @@ import argparse
 import nltk
 import RAKE
 import operator
+import re #for the regex wildcards (word replacement)
 
 stop_dir = nltk.corpus.stopwords.words('english') + ['arggis', 'others', 'us', 'plus', 'like']
 rakeObj = RAKE.Rake(stop_dir)
@@ -48,12 +49,21 @@ def get_record(card):
     #accesses the reloaded page in which the description can be seen
     soup2 = BeautifulSoup(response_job_descr_website.text, 'html.parser')
     description_text = soup2.find('div', 'jobsearch-jobDescriptionText').get_text().replace("\n", '. ')
+    description_text = re.sub(" \S+.com\S+", '', description_text)  #replaces every url that ends with .com (including backslashes with additional info, such as .com/info/details)
+    description_text = re.sub(" \S+.org\S+", '', description_text)  #replaces every url that ends with .org (same as above)
+    description_text = re.sub(" \S+@\S+", '', description_text)     #replaces every e-mail address
+    description_text = re.sub(" https\S+", '', description_text)    #replaces any url that starts with https and the whitespace beforehand
+    description_text = re.sub(" www.\S+", '', description_text)     #replaces any url that starts with www. and the whitespace beforehand
+    description_text = re.sub("[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]", '', description_text)   #replaces all dates y-m-d
+    description_text = re.sub("[0-9][0-9]/[0-9][0-9]/[0-9][0-9][0-9][0-9]", '', description_text)   #replaces all dates d-m-y
+    description_text = re.sub("[0-9][0-9][0-9][0-9]+", '', description_text)    #replaces all numbers with 4 or more digits (years etc.)
 
     '''
     TODO:
         description_text is what needs to be cleaned. 
         'description_text.replace("\n", '. ') is the only cleaning that's been done so far (see above).
         we need to look at the results to decide what some of the common clutter looks like.
+        DONE so far - (months, dots, addresses?)
     '''
    # filtered_data  = description_text.replace("\n", '\n')
     keys = Sort_Tuple(rakeObj.run(description_text))[-10:]
@@ -109,10 +119,17 @@ if __name__ == '__main__':
     '''
     position = ['web developer', 'chemist', 'data scientist']
     location = ['new york', 'new york', 'san francisco']
-    maxCards = [3, 3, 2]
+    maxCards = [3, 3, 3 ]
     firstEntry = [True, False, False]
     
     i = 0
     for entry in position:
         main(position=position[i], location=location[i], maxCards=maxCards[i], firstEntry=firstEntry[i])
         i += 1
+
+  
+
+
+
+
+    
