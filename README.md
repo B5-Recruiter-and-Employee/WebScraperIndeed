@@ -58,9 +58,14 @@ The code for it can be found on `line 50`. </br></br>
 - any number with 4 or more digits
 
 </br></br>
+
 ## Creating index in Elastic search and adding webscrapped data to index</br>
+
+Install ES & Kibana: 
+- download & unzip folders: https://www.elastic.co/downloads/elasticsearch and https://www.elastic.co/downloads/kibana
+- run the binary files: elasticsearch-7.9.3>bin/elasticsearch (for ES) AND kibana-7.9.3-windows-x86_64>bin\kibana.bat (for kibana)</br>
 <u>To look up the generated index:</u>
-- Pre-requirement: run your Elastic search and Kibana before indexing;
+- <i>Pre-requirement:</i> run your Elastic search and Kibana before indexing;
 - go to Kibana (http://localhost:5601);
 - go to Stack Management -> Index Management (http://localhost:5601/app/management/data/index_management/indices);
 - click on the index "job_offers" and look up the info e.g. "mappings"
