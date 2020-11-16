@@ -1,21 +1,3 @@
-This Script will gather data from Indeed
-
-JobTitle, JobLocation,CompanyName,JobSummary,PostDate,Date of Extraction, Salary, JobURL, DescriptionText
-
-start with
-python ./main.py --position 'POSITION' --location 'LOCATION' --maxSize MAX_NUMBER_OF_JOBLISTINGS
-
-this will save a csv file with the data
-
-It will access data from the US Website of Indeed.(cause English Job Description are better for keyword processing)
-
-Before running code do not fotget to install packages:
-pip install requests
-pip install bs4 
-
-
-
-
 # Web Scraping with Python and Beautiful Soup
 </br></br>
 ## Step 1: Installation
@@ -55,6 +37,7 @@ To change the job position, location or the amount of max entries you need to ch
 </br>
 
 `firstEntry:` [Array which simply tells the program if it's the first entry. If there's already a CSV file put False for every entry. If there's none yet, just put True for the first entry and False for the rest. It decides if the header row will be appended or not.]
+</br> The CSV file will be saved under the name 'collected_data.csv'. To change that name (and to create a new csv file, just change the name) go to `line 84`.
 
 </br></br>
 ## The pre-cleanup </br>
