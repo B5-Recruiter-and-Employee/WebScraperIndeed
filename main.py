@@ -48,14 +48,14 @@ def get_record(card):
 
     #accesses the reloaded page in which the description can be seen
     soup2 = BeautifulSoup(response_job_descr_website.text, 'html.parser')
-    description_text = soup2.find('div', 'jobsearch-jobDescriptionText').get_text().replace("\n", '. ')
+    description_text = soup2.find('div', 'jobsearch-jobDescriptionText').get_text().replace("\n", ' ')
     description_text = re.sub(" \S+.com\S+", '', description_text)  #replaces every url that ends with .com (including backslashes with additional info, such as .com/info/details)
     description_text = re.sub(" \S+.org\S+", '', description_text)  #replaces every url that ends with .org (same as above)
     description_text = re.sub(" \S+@\S+", '', description_text)     #replaces every e-mail address
     description_text = re.sub(" https\S+", '', description_text)    #replaces any url that starts with https and the whitespace beforehand
     description_text = re.sub(" www.\S+", '', description_text)     #replaces any url that starts with www. and the whitespace beforehand
     description_text = re.sub("[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]", '', description_text)   #replaces all dates y-m-d
-    description_text = re.sub("[0-9][0-9]/[0-9][0-9]/[0-9][0-9][0-9][0-9]", '', description_text)   #replaces all dates d-m-y
+    description_text = re.sub("[0-9][0-9]/[0-9][0-9]/[0-9][0-9][0-9][0-9]", '', description_text)   #replaces all dates d/m/y
     description_text = re.sub("[0-9][0-9][0-9][0-9]+", '', description_text)    #replaces all numbers with 4 or more digits (years etc.)
 
     '''
