@@ -150,6 +150,7 @@ crashlytics.properties
 crashlytics-build.properties
 fabric.properties
 
+.DS_Store
 .vscode/*
 !.vscode/settings.json
 !.vscode/tasks.json
